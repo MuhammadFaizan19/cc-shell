@@ -1,21 +1,30 @@
 import sys
 
+from app.constants import Constants
 
 def main():
     sys.stdout.write("$ ")
 
     while True:
-        command = input()
+        user_input = input()
 
-        if command.startswith('exit'):
+        if user_input.startswith(Constants.EXIT):
             break
 
-        execute_command(command)
+        execute_command(user_input)
 
         sys.stdout.write("$ ")
 
-def execute_command(command):
-    print(f'{command}: command not found')
+def execute_command(command: str):
+    items = command.split()
+    command, args = items[0], items[1:]
+
+    match command:
+        case Constants.ECHO:
+            print(' '.join(args))
+        
+        case _:
+            print(f'{command}: command not found')
 
 if __name__ == "__main__":
     main()
