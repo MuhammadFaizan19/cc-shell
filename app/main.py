@@ -22,6 +22,15 @@ def execute_command(command: str):
     match command:
         case Constants.ECHO:
             print(' '.join(args))
+
+        case Constants.TYPE:
+            valid_constants = [
+                getattr(Constants, attr)
+                for attr in dir(Constants)
+                if attr.isupper() and not callable(getattr(Constants, attr))
+            ]
+            is_builtin = args[0] in valid_constants
+            print(f'{args[0]} is a shell builtin' if is_builtin else f'{args[0]}: not found')
         
         case _:
             print(f'{command}: command not found')

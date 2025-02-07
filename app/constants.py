@@ -1,3 +1,4 @@
 class Constants:
     ECHO = 'echo'
     EXIT = 'exit'
+    TYPE = 'type'
