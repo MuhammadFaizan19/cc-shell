@@ -38,6 +38,9 @@ class Processor:
                     print(f'{args[0]} is {exec_path}')
                 else:
                     print(f'{args[0]}: not found')
+
+            case Constants.PWD:
+                print(os.getcwd())
             
             case _:
                 is_executable, exec_path = self.is_command_executable(command)
