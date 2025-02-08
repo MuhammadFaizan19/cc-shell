@@ -42,6 +42,15 @@ class Processor:
             case Constants.PWD:
                 print(os.getcwd())
             
+            case Constants.CD:
+                try:
+                    if args[0] == '~':
+                        os.chdir(self.state.home)
+                    else:
+                        os.chdir(args[0])
+                except FileNotFoundError:
+                    print(f'cd: {args[0]}: No such file or directory')
+            
             case _:
                 is_executable, exec_path = self.is_command_executable(command)
                 if is_executable:

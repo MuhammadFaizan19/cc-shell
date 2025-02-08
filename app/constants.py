@@ -3,3 +3,4 @@ class Constants:
     EXIT = 'exit'
     TYPE = 'type'
     PWD = 'pwd'
+    CD = 'cd'
