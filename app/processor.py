@@ -1,5 +1,6 @@
 import os
 import sys
+import subprocess
 
 from app.state import State
 from app.constants import Constants
@@ -39,7 +40,13 @@ class Processor:
                     print(f'{args[0]}: not found')
             
             case _:
-                print(f'{command}: command not found')
+                is_executable, exec_path = self.is_command_executable(command)
+                if is_executable:
+                    exe_name = os.path.basename(exec_path)
+                    exe_dir = os.path.dirname(exec_path)
+                    subprocess.run([exe_name] + args, cwd=exe_dir)
+                else:
+                    print(f'{command}: command not found')
 
     def is_command_executable(self, command: str) -> bool:
         for path in self.state.paths:
