@@ -2,66 +2,82 @@ import os
 import sys
 import subprocess
 
-from app.state import State
 from app.constants import Constants
 from app.utils import valid_commands, parse_input
 
 class Processor:
     def __init__(self):
-        self.state = State()
+        path = os.environ.get('PATH')
+        self.paths = path.split(':') if path else []
+        self.home = os.environ.get('HOME')
     
     def start(self):
         sys.stdout.write("$ ")
 
         while True:
             input_str = input()
-            command, args = parse_input(input_str)
+            command, args, output_file = parse_input(input_str)
 
             if command == Constants.EXIT:
-                break
+                exit_code = int(args[0]) if args else 0
+                sys.exit(exit_code)
 
-            self.process(command, args)
+            output = self.process(command, args)
+
+            if output and output_file:
+                with open(output_file, 'a') as f:
+                    f.write(output + '\n')
+            elif output:
+                print(output)
+
             sys.stdout.write("$ ")
 
     def process(self, command: str, args: list):
         match command:
             case Constants.ECHO:
-                print(' '.join(args))
+                return ' '.join(args)
             
             case Constants.TYPE:
                 is_builtin = args[0] in valid_commands
                 is_executable, exec_path = self.is_command_executable(args[0])
                 
                 if is_builtin:
-                    print(f'{args[0]} is a shell builtin')
+                    return f'{args[0]} is a shell builtin'
                 elif is_executable:
-                    print(f'{args[0]} is {exec_path}')
+                    return f'{args[0]} is {exec_path}'
                 else:
-                    print(f'{args[0]}: not found')
+                    return f'{args[0]}: not found'
 
             case Constants.PWD:
-                print(os.getcwd())
+                return os.getcwd()
             
             case Constants.CD:
                 try:
-                    if args[0] == '~':
-                        os.chdir(self.state.home)
-                    else:
-                        os.chdir(args[0])
+                    os.chdir(self.home if args[0] == '~' else args[0])
+                    return
                 except FileNotFoundError:
-                    print(f'cd: {args[0]}: No such file or directory')
+                    return f'cd: {args[0]}: No such file or directory'
             
             case _:
                 is_executable, exec_path = self.is_command_executable(command)
                 if is_executable:
                     exe_name = os.path.basename(exec_path)
                     exe_dir = os.path.dirname(exec_path)
-                    subprocess.run([exe_name] + args, cwd=exe_dir)
-                else:
-                    print(f'{command}: command not found')
 
-    def is_command_executable(self, command: str) -> bool:
-        for path in self.state.paths:
-            if os.access(os.path.join(path, command), os.X_OK):
-                return True, os.path.join(path, command)
+                    result = subprocess.run(
+                        [exe_name] + args, 
+                        cwd=exe_dir,
+                        stdout=subprocess.PIPE,
+                        text=True
+                    )
+                    return result.stdout.rstrip()
+
+                else:
+                    return f'{command}: command not found'
+
+    def is_command_executable(self, command: str):
+        for path in self.paths:
+            full_path = os.path.join(path, command)
+            if os.access(full_path, os.X_OK):
+                return True, full_path
         return False, None

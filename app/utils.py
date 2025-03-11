@@ -15,4 +15,15 @@ def parse_input(input_str: str) -> Tuple[str, List[str]]:
     tokens = shlex.split(input_str)
     command = tokens[0] if tokens else ""
     args = tokens[1:] if len(tokens) > 1 else []
-    return command, args
+    output_file = None
+    
+    redirects = [">", "1>", '>>']
+
+    for rd in redirects:
+        if rd in args:
+            idx = args.index(rd)
+            output_file = args[idx + 1]
+            args = args[:idx]
+            break
+
+    return command, args, output_file
