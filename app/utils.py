@@ -4,7 +4,7 @@ from typing import List, Tuple, Optional
 from app.constants import Constants
 
 
-valid_commands = [
+valid_commands: list[str] = [
     getattr(Constants, attr)
     for attr in dir(Constants)
     if attr.isupper() and not callable(getattr(Constants, attr))

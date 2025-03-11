@@ -1,5 +1,6 @@
 import os
 import sys
+import readline
 import subprocess
 
 from app.constants import Constants
@@ -10,6 +11,7 @@ class Processor:
         path = os.environ.get('PATH')
         self.paths = path.split(':') if path else []
         self.home = os.environ.get('HOME')
+        self.enable_autocomplete()
     
     def start(self):
         sys.stdout.write("$ ")
@@ -38,7 +40,7 @@ class Processor:
 
             sys.stdout.write("$ ")
 
-    def process(self, command: str, args: list) -> tuple[str | None, str | None]:
+    def process(self, command: str, args: list[str]) -> tuple[str | None, str | None]:
         match command:
             case Constants.ECHO:
                 return ' '.join(args), None
@@ -88,3 +90,22 @@ class Processor:
             if os.access(full_path, os.X_OK):
                 return True, full_path
         return False, None
+
+    def complete_command(self, text: str, state: int):
+        if not text:
+            return None
+
+        suggestions = [f'{cmd} ' for cmd in valid_commands if cmd.startswith(text)]
+
+        for path in self.paths:
+            if os.path.isdir(path):
+                try:
+                    suggestions += [f'{exe} ' for exe in os.listdir(path) if exe.startswith(text)]
+                except PermissionError:
+                    pass  # Ignore unreadable directories
+
+        return suggestions[state] if state < len(suggestions) else None
+    
+    def enable_autocomplete(self):
+        readline.parse_and_bind("tab: complete")
+        readline.set_completer(self.complete_command)
