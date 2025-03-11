@@ -1,5 +1,5 @@
 import shlex
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 from app.constants import Constants
 
@@ -10,20 +10,30 @@ valid_commands = [
     if attr.isupper() and not callable(getattr(Constants, attr))
 ]
 
-def parse_input(input_str: str) -> Tuple[str, List[str]]:
+def parse_input(input_str: str) -> Tuple[str, List[str], Optional[str], Optional[str]]:
     # -- Ideally this should be a custom parser
     tokens = shlex.split(input_str)
-    command = tokens[0] if tokens else ""
-    args = tokens[1:] if len(tokens) > 1 else []
-    output_file = None
-    
-    redirects = [">", "1>", '>>']
+    if not tokens:
+        return "", [], None, None
 
-    for rd in redirects:
-        if rd in args:
-            idx = args.index(rd)
-            output_file = args[idx + 1]
-            args = args[:idx]
-            break
+    command = tokens[0]
+    args = []
+    stdout_file = None
+    stderr_file = None
 
-    return command, args, output_file
+    stdout_redirects = {">", "1>", ">>", "1>>"}
+    stderr_redirects = {"2>", "2>>"}
+
+    i = 1
+    while i < len(tokens):
+        if tokens[i] in stdout_redirects and i + 1 < len(tokens):
+            stdout_file = tokens[i + 1]
+            i += 2  # Skip the next token (the filename)
+        elif tokens[i] in stderr_redirects and i + 1 < len(tokens):
+            stderr_file = tokens[i + 1]
+            i += 2 # Skip the next token (the filename)
+        else:
+            args.append(tokens[i])
+            i += 1
+
+    return command, args, stdout_file, stderr_file
