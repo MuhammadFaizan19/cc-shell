@@ -95,16 +95,33 @@ class Processor:
         if not text:
             return None
 
-        suggestions = [f'{cmd} ' for cmd in valid_commands if cmd.startswith(text)]
+        suggestions = [cmd for cmd in valid_commands if cmd.startswith(text)]
 
         for path in self.paths:
             if os.path.isdir(path):
                 try:
-                    suggestions += [f'{exe} ' for exe in os.listdir(path) if exe.startswith(text)]
+                    suggestions += [exe for exe in os.listdir(path) if exe.startswith(text)]
                 except PermissionError:
                     pass  # Ignore unreadable directories
+        
+        suggestions = sorted(set(suggestions))
+        
+        # Ensure a suggestion is not a prefix of another suggestion
+        all_same_length = True
 
-        return suggestions[state] if state < len(suggestions) else None
+        for i in range(1, len(suggestions)):
+            if len(suggestions[i]) != len(suggestions[i - 1]):
+                all_same_length = False
+                break
+
+        if state == 0 and len(suggestions) > 1 and all_same_length:
+            # Print suggestions
+            print("\n" + "  ".join(suggestions))
+            # Restore the prompt after displaying options
+            sys.stdout.write(f"$ {text}")
+            sys.stdout.flush()
+    
+        return suggestions[state] + ' ' if state < len(suggestions) else None
     
     def enable_autocomplete(self):
         readline.parse_and_bind("tab: complete")
